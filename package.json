@@ -1,0 +1,22 @@
+{
+  "name": "plugin-emoji-selector",
+  "version": "0.1.0",
+  "scripts": {
+    "publish": "gauntlet publish",
+    "build": "gauntlet build",
+    "dev": "gauntlet dev",
+    "unpack-images": "tar -xzf assets/images.tar.gz --directory assets"
+  },
+  "dependencies": {
+    "@project-gauntlet/api": "0.14.0",
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "@project-gauntlet/tools": "0.10.0",
+    "@types/deno": "^2.0.0",
+    "@types/lodash": "^4.17.20",
+    "@types/node": "^24.2.0",
+    "@types/react": "^18.3.18",
+    "typescript": "^5.7.3"
+  }
+}
