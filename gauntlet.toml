@@ -1,0 +1,19 @@
+[gauntlet]
+name = 'Emoji Selector'
+description = """
+A Gauntlet plugin that allows you to select emojis
+"""
+
+[[entrypoint]]
+id = 'emoji-selector'
+icon = 'icon.png'
+name = 'Emoji Selector'
+path = 'src/emoji-selector.tsx'
+type = 'view'
+description = """
+Entrypoint for the emoji selector plugin
+"""
+
+[permissions]
+clipboard = ["read", "write"]
+
