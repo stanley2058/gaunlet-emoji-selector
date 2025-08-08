@@ -1,7 +1,7 @@
 import { jsxs, jsx } from 'react/jsx-runtime';
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Grid, ActionPanel } from '@project-gauntlet/api/components';
-import { useCachedPromise } from '@project-gauntlet/api/hooks';
+import { usePromise } from '@project-gauntlet/api/hooks';
 import { assetData, Clipboard } from '@project-gauntlet/api/helpers';
 import { l as lodashExports } from './vendor.js';
 
@@ -59,12 +59,20 @@ class EmojiSearcher {
         const res = await new Response(decompressedStream).text();
         return new EmojiSearcher(JSON.parse(res));
     }
-    constructor(emojiList) {
+    constructor(emojiList, cachedJson) {
         this.emojiList = emojiList;
-        this.nameTrieRoot = { children: {}, output: [] };
-        this.keywordTrieRoot = { children: {}, output: [] };
-        this.categoryTrieRoot = { children: {}, output: [] };
-        this.buildTries();
+        if (cachedJson) {
+            this.nameTrieRoot = cachedJson.nameTrieRoot;
+            this.keywordTrieRoot = cachedJson.keywordTrieRoot;
+            this.categoryTrieRoot = cachedJson.categoryTrieRoot;
+            this.nameMap = cachedJson.nameMap;
+        }
+        else {
+            this.nameTrieRoot = { children: {}, output: [] };
+            this.keywordTrieRoot = { children: {}, output: [] };
+            this.categoryTrieRoot = { children: {}, output: [] };
+            this.buildTries();
+        }
     }
     /** Build suffix‑tries for names, keywords, and categories */
     buildTries() {
@@ -75,18 +83,12 @@ class EmojiSearcher {
             const name = emoji[1];
             this.nameMap[name] = i;
             this.insertIntoTrie(this.nameTrieRoot, name.toLowerCase(), i);
-        }
-        // Build keyword trie
-        for (let i = 0; i < emojis.length; i++) {
-            const emoji = emojis[i];
+            // Build keyword trie
             for (const keywordIdx of emoji[4]) {
                 const keyword = keywords[keywordIdx];
                 this.insertIntoTrie(this.keywordTrieRoot, keyword.toLowerCase(), i);
             }
-        }
-        // Build category/subcategory trie
-        for (let i = 0; i < emojis.length; i++) {
-            const emoji = emojis[i];
+            // Build category/subcategory trie
             const categoryName = category[emoji[2]];
             const subcategoryName = subCategory[emoji[2]][emoji[3]];
             this.insertIntoTrie(this.categoryTrieRoot, categoryName.toLowerCase(), i);
@@ -202,23 +204,38 @@ class EmojiSearcher {
             facebook: arr[3] === 1,
         };
     }
+    toJSON() {
+        return {
+            nameTrieRoot: this.nameTrieRoot,
+            keywordTrieRoot: this.keywordTrieRoot,
+            categoryTrieRoot: this.categoryTrieRoot,
+            nameMap: this.nameMap,
+        };
+    }
 }
 
-async function getEmojiListData() {
-    const data = await assetData("reduced-emoji.gz");
+async function readGzippedJson(path) {
+    const data = await assetData(path);
     const ds = new DecompressionStream("gzip");
     const blob = new Blob([data]);
     const decompressedStream = blob.stream().pipeThrough(ds);
     const res = await new Response(decompressedStream).text();
     return JSON.parse(res);
 }
+function readReducedEmojiList() {
+    return readGzippedJson("reduced-emoji.gz");
+}
+function readEmojiTrieCache() {
+    return readGzippedJson("searcher-trie-dump.gz");
+}
 function useEmojiSearcher() {
-    const { data: emojiList } = useCachedPromise(getEmojiListData);
+    const { data: emojiList } = usePromise(readReducedEmojiList);
+    const { data: emojiTrieCache } = usePromise(readEmojiTrieCache);
     const searcher = useMemo(() => {
-        if (!emojiList)
+        if (!emojiList || !emojiTrieCache)
             return null;
-        return new EmojiSearcher(emojiList);
-    }, [emojiList]);
+        return new EmojiSearcher(emojiList, emojiTrieCache);
+    }, [emojiList, emojiTrieCache]);
     return searcher;
 }
 const throttledSearch = lodashExports.throttle((input, searcher, update, forceReloadImage) => {
@@ -273,7 +290,7 @@ function EmojiSelector() {
     const { fontRendering, forceReloadImage } = useForceImageReload();
     const commonEmoji = useMemo(() => searcher?.getCommon() || [], [searcher]);
     const display = filteredEmoji || commonEmoji;
-    return (jsxs(Grid, { columns: 8, actions: jsxs(ActionPanel, { children: [jsx(ActionPanel.Action, { label: "Copy to clipboard", onAction: async (emoji) => {
+    return (jsxs(Grid, { isLoading: !searcher, columns: 8, actions: jsxs(ActionPanel, { children: [jsx(ActionPanel.Action, { label: "Copy to clipboard", onAction: async (emoji) => {
                         if (!emoji)
                             return;
                         await Clipboard.writeText(emoji);
@@ -317,4 +334,4 @@ function EmojiDisplay({ emoji, forceFontRendering, }) {
 }
 
 export { EmojiSelector as default };
-//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiZW1vamktc2VsZWN0b3IuanMiLCJzb3VyY2VzIjpbXSwic291cmNlc0NvbnRlbnQiOltdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7OzsifQ==
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiZW1vamktc2VsZWN0b3IuanMiLCJzb3VyY2VzIjpbXSwic291cmNlc0NvbnRlbnQiOltdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7OyJ9
