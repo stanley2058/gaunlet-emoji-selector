@@ -1,27 +1,36 @@
 import { ReactElement, useCallback, useEffect, useMemo, useState } from "react";
 import { ActionPanel, Grid } from "@project-gauntlet/api/components";
-import { useCachedPromise } from "@project-gauntlet/api/hooks";
+import { usePromise } from "@project-gauntlet/api/hooks";
 import { assetData, Clipboard } from "@project-gauntlet/api/helpers";
 import { EmojiSearcher } from "./search-emoji";
 import { throttle } from "lodash";
 import type { HumanReadableEmoji, ReducedEmojiList } from "./type";
 
-async function getEmojiListData() {
-  const data = await assetData("reduced-emoji.gz");
+async function readGzippedJson<T>(path: string) {
+  const data = await assetData(path);
   const ds = new DecompressionStream("gzip");
   const blob = new Blob([data]);
   const decompressedStream = blob.stream().pipeThrough(ds);
   const res = await new Response(decompressedStream).text();
-  return JSON.parse(res) as ReducedEmojiList;
+  return JSON.parse(res) as T;
 }
 
+function readReducedEmojiList() {
+  return readGzippedJson<ReducedEmojiList>("reduced-emoji.gz");
+}
+function readEmojiTrieCache() {
+  return readGzippedJson<EmojiTrieCache>("searcher-trie-dump.gz");
+}
+
+type EmojiTrieCache = ReturnType<typeof EmojiSearcher.prototype.toJSON>;
 function useEmojiSearcher() {
-  const { data: emojiList } = useCachedPromise(getEmojiListData);
+  const { data: emojiList } = usePromise(readReducedEmojiList);
+  const { data: emojiTrieCache } = usePromise(readEmojiTrieCache);
 
   const searcher = useMemo(() => {
-    if (!emojiList) return null;
-    return new EmojiSearcher(emojiList);
-  }, [emojiList]);
+    if (!emojiList || !emojiTrieCache) return null;
+    return new EmojiSearcher(emojiList, emojiTrieCache);
+  }, [emojiList, emojiTrieCache]);
 
   return searcher;
 }
@@ -96,6 +105,7 @@ export default function EmojiSelector(): ReactElement {
 
   return (
     <Grid
+      isLoading={!searcher}
       columns={8}
       actions={
         <ActionPanel>

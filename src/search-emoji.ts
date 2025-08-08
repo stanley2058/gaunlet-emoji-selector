@@ -74,12 +74,23 @@ export class EmojiSearcher {
     return new EmojiSearcher(JSON.parse(res));
   }
 
-  constructor(emojiList: ReducedEmojiList) {
+  constructor(
+    emojiList: ReducedEmojiList,
+    cachedJson?: ReturnType<typeof EmojiSearcher.prototype.toJSON>,
+  ) {
     this.emojiList = emojiList;
-    this.nameTrieRoot = { children: {}, output: [] };
-    this.keywordTrieRoot = { children: {}, output: [] };
-    this.categoryTrieRoot = { children: {}, output: [] };
-    this.buildTries();
+
+    if (cachedJson) {
+      this.nameTrieRoot = cachedJson.nameTrieRoot;
+      this.keywordTrieRoot = cachedJson.keywordTrieRoot;
+      this.categoryTrieRoot = cachedJson.categoryTrieRoot;
+      this.nameMap = cachedJson.nameMap;
+    } else {
+      this.nameTrieRoot = { children: {}, output: [] };
+      this.keywordTrieRoot = { children: {}, output: [] };
+      this.categoryTrieRoot = { children: {}, output: [] };
+      this.buildTries();
+    }
   }
 
   /** Build suffix‑tries for names, keywords, and categories */
@@ -92,20 +103,14 @@ export class EmojiSearcher {
       const name = emoji[1];
       this.nameMap[name] = i;
       this.insertIntoTrie(this.nameTrieRoot, name.toLowerCase(), i);
-    }
 
-    // Build keyword trie
-    for (let i = 0; i < emojis.length; i++) {
-      const emoji = emojis[i]!;
+      // Build keyword trie
       for (const keywordIdx of emoji[4]) {
         const keyword = keywords[keywordIdx]!;
         this.insertIntoTrie(this.keywordTrieRoot, keyword.toLowerCase(), i);
       }
-    }
 
-    // Build category/subcategory trie
-    for (let i = 0; i < emojis.length; i++) {
-      const emoji = emojis[i]!;
+      // Build category/subcategory trie
       const categoryName = category[emoji[2]]!;
       const subcategoryName = subCategory[emoji[2]]![emoji[3]]!;
       this.insertIntoTrie(this.categoryTrieRoot, categoryName.toLowerCase(), i);
@@ -233,6 +238,15 @@ export class EmojiSearcher {
       google: arr[1] === 1,
       twitter: arr[2] === 1,
       facebook: arr[3] === 1,
+    };
+  }
+
+  toJSON() {
+    return {
+      nameTrieRoot: this.nameTrieRoot,
+      keywordTrieRoot: this.keywordTrieRoot,
+      categoryTrieRoot: this.categoryTrieRoot,
+      nameMap: this.nameMap,
     };
   }
 }
