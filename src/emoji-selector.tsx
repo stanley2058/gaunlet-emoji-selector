@@ -1,4 +1,4 @@
-import { ReactElement, useCallback, useEffect, useMemo, useState } from "react";
+import { ReactElement, useMemo, useState } from "react";
 import { ActionPanel, Grid } from "@project-gauntlet/api/components";
 import { usePromise } from "@project-gauntlet/api/hooks";
 import { assetData, Clipboard } from "@project-gauntlet/api/helpers";
@@ -18,19 +18,14 @@ async function readGzippedJson<T>(path: string) {
 function readReducedEmojiList() {
   return readGzippedJson<ReducedEmojiList>("reduced-emoji.gz");
 }
-function readEmojiTrieCache() {
-  return readGzippedJson<EmojiTrieCache>("searcher-trie-dump.gz");
-}
 
-type EmojiTrieCache = ReturnType<typeof EmojiSearcher.prototype.toJSON>;
 function useEmojiSearcher() {
   const { data: emojiList } = usePromise(readReducedEmojiList);
-  const { data: emojiTrieCache } = usePromise(readEmojiTrieCache);
 
   const searcher = useMemo(() => {
-    if (!emojiList || !emojiTrieCache) return null;
-    return new EmojiSearcher(emojiList, emojiTrieCache);
-  }, [emojiList, emojiTrieCache]);
+    if (!emojiList) return null;
+    return new EmojiSearcher(emojiList);
+  }, [emojiList]);
 
   return searcher;
 }
@@ -40,22 +35,15 @@ const throttledSearch = throttle(
     input: string | null | undefined,
     searcher: EmojiSearcher,
     update: (e: HumanReadableEmoji[] | null) => void,
-    forceReloadImage: () => void,
+    onFlush: () => void,
   ) => {
     input = input?.trim();
     if (!input) {
       update(null);
     } else {
-      const result = searcher.search(input);
-      result.sort((a, b) => {
-        if (a.weight && b.weight) return b.weight - a.weight;
-        if (a.weight) return -1;
-        if (b.weight) return 1;
-        return a.emoji.localeCompare(b.emoji);
-      });
-      update(result.slice(0, 32));
+      update(searcher.search(input).slice(0, 64));
     }
-    forceReloadImage();
+    onFlush();
   },
   25,
   {
@@ -64,41 +52,12 @@ const throttledSearch = throttle(
   },
 );
 
-const throttledReload = throttle((reloadFn: () => void) => reloadFn(), 50, {
-  leading: false,
-  trailing: true,
-});
-
-/**
- * Force font rendering of emojis for a brief moment to force emoji image reload.
- *
- * This is a workaround, since the image rendering would be incorrect when the
- * search term is empty. (Fallback to rendering common emojis)
- */
-function useForceImageReload() {
-  const [fontRendering, setFontRendering] = useState(false);
-  const forceReloadImage = useCallback(
-    () => throttledReload(() => setFontRendering(true)),
-    [],
-  );
-
-  useEffect(() => {
-    if (!fontRendering) return;
-    setFontRendering(false);
-  }, [fontRendering]);
-
-  return {
-    fontRendering,
-    forceReloadImage,
-  };
-}
-
 export default function EmojiSelector(): ReactElement {
   const searcher = useEmojiSearcher();
   const [filteredEmoji, setFilteredEmoji] = useState<
     HumanReadableEmoji[] | null
   >(null);
-  const { fontRendering, forceReloadImage } = useForceImageReload();
+  const [isSearching, setIsSearching] = useState(false);
 
   const commonEmoji = useMemo(() => searcher?.getCommon() || [], [searcher]);
   const display = filteredEmoji || commonEmoji;
@@ -140,7 +99,10 @@ export default function EmojiSelector(): ReactElement {
         placeholder="Search for emoji..."
         onChange={(v) => {
           if (!searcher) return;
-          throttledSearch(v, searcher, setFilteredEmoji, forceReloadImage);
+          setIsSearching(true);
+          throttledSearch(v, searcher, setFilteredEmoji, () =>
+            setIsSearching(false),
+          );
         }}
       />
       {!searcher && (
@@ -150,13 +112,23 @@ export default function EmojiSelector(): ReactElement {
           image={{ asset: "icon.png" }}
         />
       )}
-      {display.map((value) => (
-        <Grid.Item id={value.emoji} key={value.emoji} title={value.name}>
-          <Grid.Item.Content>
-            <EmojiDisplay emoji={value} forceFontRendering={fontRendering} />
-          </Grid.Item.Content>
-        </Grid.Item>
-      ))}
+      {/* placeholder items shown while searching to force image reload */}
+      {isSearching &&
+        new Array(24).fill(null).map((_, i) => (
+          <Grid.Item id={`placeholder-${i}`} key={i}>
+            <Grid.Item.Content>
+              <Grid.Item.Content.H1 />
+            </Grid.Item.Content>
+          </Grid.Item>
+        ))}
+      {!isSearching &&
+        display.map((value) => (
+          <Grid.Item id={value.emoji} key={value.emoji} title={value.name}>
+            <Grid.Item.Content>
+              <EmojiDisplay emoji={value} />
+            </Grid.Item.Content>
+          </Grid.Item>
+        ))}
     </Grid>
   );
 }

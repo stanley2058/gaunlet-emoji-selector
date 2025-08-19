@@ -1,6 +1,6 @@
 {
   "name": "plugin-emoji-selector",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "scripts": {
     "publish": "gauntlet publish",
     "build": "gauntlet build",
@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@project-gauntlet/api": "0.14.0",
+    "fzf": "^0.5.2",
     "lodash": "^4.17.21"
   },
   "devDependencies": {
