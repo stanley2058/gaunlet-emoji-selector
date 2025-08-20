@@ -1,5 +1,5 @@
 import { jsxs, jsx } from 'react/jsx-runtime';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Grid, ActionPanel } from '@project-gauntlet/api/components';
 import { usePromise } from '@project-gauntlet/api/hooks';
 import { assetData, Clipboard } from '@project-gauntlet/api/helpers';
@@ -198,9 +198,19 @@ function EmojiSelector() {
     const searcher = useEmojiSearcher();
     const [filteredEmoji, setFilteredEmoji] = useState(null);
     const [isSearching, setIsSearching] = useState(false);
+    const [focusItemId, setFocusItemId] = useState(null);
     const commonEmoji = useMemo(() => searcher?.getCommon() || [], [searcher]);
     const display = filteredEmoji || commonEmoji;
-    return (jsxs(Grid, { isLoading: !searcher, columns: 8, actions: jsxs(ActionPanel, { children: [jsx(ActionPanel.Action, { label: "Copy to clipboard", onAction: async (emoji) => {
+    const focusedEmojiName = display.find((e) => e.emoji === focusItemId)?.name;
+    const firstFilteredEmoji = filteredEmoji?.[0]?.emoji;
+    useEffect(() => {
+        if (isSearching || !firstFilteredEmoji) {
+            setFocusItemId(null);
+            return;
+        }
+        setFocusItemId(firstFilteredEmoji);
+    }, [isSearching, firstFilteredEmoji]);
+    return (jsxs(Grid, { focusedItemId: focusItemId, onItemFocusChange: setFocusItemId, isLoading: !searcher, columns: 8, actions: jsxs(ActionPanel, { children: [jsx(ActionPanel.Action, { label: "Copy to clipboard", onAction: async (emoji) => {
                         if (!emoji)
                             return;
                         await Clipboard.writeText(emoji);
@@ -224,9 +234,9 @@ function EmojiSelector() {
                         return;
                     setIsSearching(true);
                     throttledSearch(v, searcher, setFilteredEmoji, () => setIsSearching(false));
-                } }), !searcher && (jsx(Grid.EmptyView, { title: "Hold on tight!", description: "Grabbing all the emojis just for you...", image: { asset: "icon.png" } })), isSearching &&
-                new Array(24).fill(null).map((_, i) => (jsx(Grid.Item, { id: `placeholder-${i}`, children: jsx(Grid.Item.Content, { children: jsx(Grid.Item.Content.H1, {}) }) }, i))), !isSearching &&
-                display.map((value) => (jsx(Grid.Item, { id: value.emoji, title: value.name, children: jsx(Grid.Item.Content, { children: jsx(EmojiDisplay, { emoji: value }) }) }, value.emoji)))] }));
+                } }), !searcher && (jsx(Grid.EmptyView, { title: "Hold on tight!", description: "Grabbing all the emojis just for you...", image: { asset: "icon.png" } })), jsxs(Grid.Section, { title: focusedEmojiName ?? "", columns: 8, children: [isSearching &&
+                        new Array(24).fill(null).map((_, i) => (jsx(Grid.Item, { id: `placeholder-${i}`, children: jsx(Grid.Item.Content, { children: jsx(Grid.Item.Content.H1, {}) }) }, i))), !isSearching &&
+                        display.map((value) => (jsx(Grid.Item, { id: value.emoji, title: value.name, children: jsx(Grid.Item.Content, { children: jsx(EmojiDisplay, { emoji: value }) }) }, value.emoji)))] })] }));
 }
 function getImagePath(emoji) {
     if (!emoji.image)
@@ -247,4 +257,4 @@ function EmojiDisplay({ emoji, forceFontRendering, }) {
 }
 
 export { EmojiSelector as default };
-//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiZW1vamktc2VsZWN0b3IuanMiLCJzb3VyY2VzIjpbXSwic291cmNlc0NvbnRlbnQiOltdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7OyJ9
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiZW1vamktc2VsZWN0b3IuanMiLCJzb3VyY2VzIjpbXSwic291cmNlc0NvbnRlbnQiOltdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7OzsifQ==
