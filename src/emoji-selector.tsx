@@ -1,4 +1,4 @@
-import { ReactElement, useMemo, useState } from "react";
+import { ReactElement, useEffect, useMemo, useState } from "react";
 import { ActionPanel, Grid } from "@project-gauntlet/api/components";
 import { usePromise } from "@project-gauntlet/api/hooks";
 import { assetData, Clipboard } from "@project-gauntlet/api/helpers";
@@ -58,12 +58,24 @@ export default function EmojiSelector(): ReactElement {
     HumanReadableEmoji[] | null
   >(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [focusItemId, setFocusItemId] = useState<string | null>(null);
 
   const commonEmoji = useMemo(() => searcher?.getCommon() || [], [searcher]);
   const display = filteredEmoji || commonEmoji;
+  const focusedEmojiName = display.find((e) => e.emoji === focusItemId)?.name;
+  const firstFilteredEmoji = filteredEmoji?.[0]?.emoji;
+  useEffect(() => {
+    if (isSearching || !firstFilteredEmoji) {
+      setFocusItemId(null);
+      return;
+    }
+    setFocusItemId(firstFilteredEmoji);
+  }, [isSearching, firstFilteredEmoji]);
 
   return (
     <Grid
+      focusedItemId={focusItemId}
+      onItemFocusChange={setFocusItemId}
       isLoading={!searcher}
       columns={8}
       actions={
@@ -112,23 +124,26 @@ export default function EmojiSelector(): ReactElement {
           image={{ asset: "icon.png" }}
         />
       )}
-      {/* placeholder items shown while searching to force image reload */}
-      {isSearching &&
-        new Array(24).fill(null).map((_, i) => (
-          <Grid.Item id={`placeholder-${i}`} key={i}>
-            <Grid.Item.Content>
-              <Grid.Item.Content.H1 />
-            </Grid.Item.Content>
-          </Grid.Item>
-        ))}
-      {!isSearching &&
-        display.map((value) => (
-          <Grid.Item id={value.emoji} key={value.emoji} title={value.name}>
-            <Grid.Item.Content>
-              <EmojiDisplay emoji={value} />
-            </Grid.Item.Content>
-          </Grid.Item>
-        ))}
+      <Grid.Section title={focusedEmojiName ?? ""} columns={8}>
+        {/* placeholder items shown while searching to force image reload */}
+        {isSearching &&
+          new Array(24).fill(null).map((_, i) => (
+            <Grid.Item id={`placeholder-${i}`} key={i}>
+              <Grid.Item.Content>
+                <Grid.Item.Content.H1 />
+              </Grid.Item.Content>
+            </Grid.Item>
+          ))}
+
+        {!isSearching &&
+          display.map((value) => (
+            <Grid.Item id={value.emoji} key={value.emoji} title={value.name}>
+              <Grid.Item.Content>
+                <EmojiDisplay emoji={value} />
+              </Grid.Item.Content>
+            </Grid.Item>
+          ))}
+      </Grid.Section>
     </Grid>
   );
 }

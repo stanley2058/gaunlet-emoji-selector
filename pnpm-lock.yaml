@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@project-gauntlet/api':
-        specifier: 0.14.0
-        version: 0.14.0
+        specifier: 0.21.0
+        version: 0.21.0
       fzf:
         specifier: ^0.5.2
         version: 0.5.2
@@ -19,8 +19,8 @@ importers:
         version: 4.17.21
     devDependencies:
       '@project-gauntlet/tools':
-        specifier: 0.10.0
-        version: 0.10.0
+        specifier: 0.11.0
+        version: 0.11.0
       '@types/deno':
         specifier: ^2.0.0
         version: 2.3.0
@@ -64,11 +64,11 @@ packages:
     resolution: {integrity: sha512-CidYeaV4VQLIMbZlYqs0SJaZe/DyI0E4nsbFmPtCa2koKzMjZj/BThTCb+bvzcGhzp2A4Js1c4jDg6lqaqapyQ==}
     hasBin: true
 
-  '@project-gauntlet/api@0.14.0':
-    resolution: {integrity: sha512-aHmaqBm4YlAUxWtbK4XkQiTdfBgabKCH0lcyyEAN+ytXa08nEXNqMlkiNpQMUozXtibL0RQuh9Rw91YC43urvA==}
+  '@project-gauntlet/api@0.21.0':
+    resolution: {integrity: sha512-fpNLf9P+uWEHSf/83rPAKJeLaxQADYRk/YzAdny4sO6JHGTOwRV5ZUFXdbAhZh6NljKP/MHxN8iLCqUIkGCZ8Q==}
 
-  '@project-gauntlet/tools@0.10.0':
-    resolution: {integrity: sha512-JRwoqEQG7tejvZcacJfA5G2XuiJ+mupP7QL8NQCILBMztOpZzrVG8LqojU2IdrpmURqUxuXaDpXGUIaUhgu6jQ==}
+  '@project-gauntlet/tools@0.11.0':
+    resolution: {integrity: sha512-rhrc1o0Zjnl6uBw/V3DzOlL+4fGXrFLmZfsIsx7HWBfaFDMg/etKT6JclpfyBeRhtYYy3cysL8yMTmhv50K+JQ==}
     hasBin: true
 
   '@protobufjs/aspromise@1.1.2':
@@ -559,9 +559,9 @@ snapshots:
 
   '@mstssk/cleandir@2.0.0': {}
 
-  '@project-gauntlet/api@0.14.0': {}
+  '@project-gauntlet/api@0.21.0': {}
 
-  '@project-gauntlet/tools@0.10.0':
+  '@project-gauntlet/tools@0.11.0':
     dependencies:
       '@grpc/grpc-js': 1.13.4
       '@grpc/proto-loader': 0.7.15
